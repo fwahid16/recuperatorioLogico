@@ -1,0 +1,88 @@
+%persona(Apodo, Edad, Peculiaridades).
+persona(ale, 15, [claustrofobia, cuentasRapidas, amorPorLosPerros]).
+persona(agus, 25, [lecturaVeloz, ojoObservador, minuciosidad]).
+persona(fran, 30, [fanDeLosComics]).
+persona(rolo, 12, []).
+
+%esSalaDe(NombreSala, Empresa).
+esSalaDe(elPayasoExorcista, salSiPuedes).
+esSalaDe(socorro, salSiPuedes).
+esSalaDe(linternas, elLaberintoso).
+esSalaDe(guerrasEstelares, escapepepe).
+esSalaDe(fundacionDelMulo, escapepepe).
+esSalaDe(estrellasDePelea,supercelula).
+esSalaDe(choqueDeLaRealeza,supercelula).
+esSalaDe(miseriaDeLaNoche,sKPista).
+esSalaDe(fundacion,abc).
+%terrorifica(CantidadDeSustos, EdadMinima).
+%familiar(Tematica, CantidadDeHabitaciones).
+%enigmatica(Candados).
+
+%sala(Nombre, Experiencia).
+sala(elPayasoExorcista, terrorifica(100, 18)).
+sala(socorro, terrorifica(20, 12)).
+sala(linternas, familiar(comics, 5)).
+sala(guerrasEstelares, familiar(futurista, 7)).
+sala(fundacionDelMulo, enigmatica([combinacionAlfanumerica, deLlave, deBoton])).
+sala(fundacion, enigmatica([combinacionAlfanumerica])).
+salas(estrellasDePelea, familiar(videojuegos, 7)).
+salas(choqueDeLaRealeza, familiar(videojuegos, 0)).
+sala(miseriaDeLaNoche, terrorifica(150, 21)).
+sala(m, enigmatica([ab])).
+
+nivelDeDificultadDeLaSala(Sala, NivelDeDificultad):-
+    sala(Sala, Experiencia),
+    nivelDeDificultad(Experiencia, NivelDeDificultad).
+
+nivelDeDificultad(terrorifica(CantidadDeSustos, EdadMinima), NivelDeDificultad):-
+    NivelDeDificultad is CantidadDeSustos - EdadMinima.
+
+nivelDeDificultad(familiar(futurista, _), 15).
+
+nivelDeDificultad(familiar(comics, CantidadDeHabitaciones), CantidadDeHabitaciones).
+
+nivelDeDificultad(enigmatica(Candados), CantidadDeCandados):-
+    length(Candados, CantidadDeCandados).
+
+puedeSalir(Persona, Sala):-
+    nivelDeDificultadDeLaSala(Sala, 1),
+    not(member(claustrofobia,Caracteristicas)).
+
+puedeSalir(Persona,Sala):-
+    persona(Persona,_,Caracteristicas),
+    not(member(claustrofobia,Caracteristicas)),
+    nivelApropiado(Sala),
+    tieneMasDe13(Persona).
+
+tieneMasDe13(Persona):-
+    persona(Persona,Edad,_),
+    Edad>=13.
+
+nivelApropiado(Sala):-
+    nivelDeDificultadDeLaSala(Sala,Nivel),
+    Nivel<5.
+
+%esMacabra/1: una empresa es macabra si todas sus salas son de experiencia terrorífica.
+esMacabra(Empresa):-
+    esSalaDe(_, Empresa),
+    forall(esSalaDe(Sala, Empresa), sala(Sala, terrorifica(_, _))).
+
+%tieneSuerte/2: una persona tiene suerte en una sala si puede salir de ella aún sin tener ninguna peculiaridad.
+tieneSuerte(Persona, Sala):-
+    puedeSalir(Persona, Sala),
+    persona(Persona, _, Peculiaridades),
+    length(Peculiaridades, 0).
+
+%empresaCopada/1: una empresa es copada si no es macabra y el promedio de dificultad de sus salas es menor a 4.
+esEmpresaCopada(Empresa) :-
+    esSalaDe(_, Empresa), 
+    not(esMacabra(Empresa)), 
+    promedioDificultad(Empresa, Promedio),
+    Promedio < 4.
+
+promedioDificultad(Empresa, Promedio) :-
+    findall(Dificultad, (esSalaDe(Sala, Empresa), nivelDeDificultadDeLaSala(Sala, Dificultad)), Dificultades),
+    length(Dificultades, CantSalas),
+    CantSalas > 0,
+    sum_list(Dificultades, SumaDificultades),
+    Promedio is SumaDificultades / CantSalas.
